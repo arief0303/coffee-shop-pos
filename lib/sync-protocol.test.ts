@@ -4,6 +4,7 @@ import {
   calculateSaleTotal,
   validateSyncBatch,
 } from "@/lib/sync-protocol";
+import { identifier } from "@/lib/time";
 
 describe("sync protocol", () => {
   it("accepts a sale operation with a stable idempotency key", () => {
@@ -68,6 +69,16 @@ describe("sync protocol", () => {
     }));
 
     expect(() => validateSyncBatch({ operations })).toThrow("Too many operations");
+  });
+
+  it("creates an id when Web Crypto is unavailable on an HTTP origin", () => {
+    const originalCrypto = globalThis.crypto;
+    Object.defineProperty(globalThis, "crypto", { configurable: true, value: undefined });
+    try {
+      expect(identifier()).toMatch(/^[a-z0-9-]+$/);
+    } finally {
+      Object.defineProperty(globalThis, "crypto", { configurable: true, value: originalCrypto });
+    }
   });
 
   it("calculates totals using integer IDR values", () => {

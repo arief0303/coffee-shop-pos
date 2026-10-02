@@ -1,5 +1,6 @@
 import { DBSchema, IDBPDatabase, openDB } from "idb";
 import type { Product, Sale, SyncOperation } from "@/lib/sync-protocol";
+import { identifier } from "@/lib/time";
 
 type QueueRecord = {
   id: string;
@@ -28,7 +29,7 @@ interface PosDatabase extends DBSchema {
 let databasePromise: Promise<IDBPDatabase<PosDatabase>> | undefined;
 
 function createId(): string {
-  return crypto.randomUUID();
+  return identifier();
 }
 
 export function getDatabase(): Promise<IDBPDatabase<PosDatabase>> {
