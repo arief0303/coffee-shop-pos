@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bean Counter POS
 
-## Getting Started
+Offline-first coffee shop point-of-sale PWA. The browser owns the working copy in IndexedDB; Next.js serverless route handlers are the only layer allowed to access Google Sheets.
 
-First, run the development server:
+## Current scope
+
+- Single cashier/browser
+- Coffee, tea, and food menu inventory
+- Cash sales only
+- Local checkout works without internet
+- Products and sales sync to Google Sheets when online
+- No payment gateway, receipt printer, multi-user authentication, or reporting dashboard yet
+
+## Run locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local
+npm run dev -- --hostname 127.0.0.1 --port 10020
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://127.0.0.1:10020.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Without Google credentials, the POS still works locally. Product and sale changes remain in IndexedDB and the UI reports that Sheets sync is unavailable.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Google Sheets setup
 
-## Learn More
+Create a spreadsheet with these tabs and header rows:
 
-To learn more about Next.js, take a look at the following resources:
+`Products` row 1:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```text
+id | name | sku | price | stock | category | updatedAt
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`Sales` row 1:
 
-## Deploy on Vercel
+```text
+id | items | total | timestamp | paymentMethod | operationId
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Then:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Enable Google Sheets API in Google Cloud.
+2. Create a service account.
+3. Share the spreadsheet with the service-account email as Editor.
+4. Put the service-account email, private key, and spreadsheet ID in `.env.local`.
+5. Restart the Next.js server.
+
+The private key is consumed only by `app/api/products/route.ts` and `app/api/sync/route.ts`; it is never bundled for the browser.
+
+## Offline model
+
+IndexedDB stores three things in the `pos-system` database:
+
+- `products`: the local menu and current local stock
+- `sales`: completed cash sales
+- `syncQueue`: immutable operations waiting for the serverless API
+
+Checkout writes the sale and stock updates locally before attempting a network request. When connectivity returns, the queue is sent to `/api/sync`. Google Sheets writes are idempotent by sale/product ID, so retrying a request does not append the same sale twice.
+
+The service worker caches the application shell. Browser storage can still be cleared or evicted by the browser; this is not a replacement for a durable server database.
+
+## Verification
+
+```bash
+npm test
+npm run lint
+npx tsc --noEmit
+npm run build
+```
+
+## Deployment
+
+Deploy as a normal Node-compatible Next.js application on Vercel, Cloud Run, or another serverless host. Configure these server-side environment variables in the deployment platform:
+
+- `GOOGLE_SERVICE_ACCOUNT_EMAIL`
+- `GOOGLE_PRIVATE_KEY`
+- `GOOGLE_SHEET_ID`
+
+The current prototype has no authentication on the sync routes. Keep the deployment private or place it behind an access-control layer before exposing it to the public internet. Add Google OAuth or another server-side session boundary before production use.

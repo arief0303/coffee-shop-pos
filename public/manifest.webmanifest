@@ -1,0 +1,10 @@
+{
+  "name": "Bean Counter POS",
+  "short_name": "Bean Counter",
+  "description": "Offline-first coffee shop point of sale",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f4ed",
+  "theme_color": "#47362b",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
