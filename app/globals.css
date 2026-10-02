@@ -115,3 +115,13 @@ h2 { font-size: 25px; }
 
 @media (max-width: 860px) { .workspace, .inventory-layout { grid-template-columns: 1fr; } .cart-panel { min-height: 450px; } }
 @media (max-width: 600px) { .topbar { align-items: flex-start; flex-direction: column; gap: 17px; } .topbar-actions { flex-wrap: wrap; } .page-heading { align-items: flex-start; flex-direction: column; gap: 10px; } .sync-note { text-align: left; } .catalogue-tools { align-items: stretch; flex-direction: column; } .search-box { flex-basis: auto; } .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .product-card { min-height: 170px; padding: 12px; } .inventory-row { align-items: center; flex-wrap: wrap; padding: 12px 0; } .inventory-row > span:not(.product-emoji) { margin-left: 50px; } }
+
+.login-page { align-items: center; background: radial-gradient(circle at 50% 0%, #fff8ef, transparent 36rem), var(--cream); display: flex; justify-content: center; min-height: 100vh; padding: 24px; }
+.login-card { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); max-width: 420px; padding: 42px; text-align: center; width: 100%; }
+.login-card .brand-mark { margin: 0 auto 22px; }
+.login-card h1 { font-size: 36px; margin-bottom: 13px; }
+.login-card > p:not(.eyebrow):not(.login-error) { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 24px; }
+.google-button { align-items: center; background: var(--espresso); border-radius: 9px; color: #fffaf3; display: flex; font-size: 14px; font-weight: 700; gap: 11px; justify-content: center; padding: 13px; text-decoration: none; }
+.google-button span { align-items: center; background: white; border-radius: 50%; color: #4285f4; display: inline-flex; font-family: Arial, sans-serif; font-size: 13px; font-weight: 700; height: 20px; justify-content: center; width: 20px; }
+.login-card small { color: var(--muted); display: block; font-size: 11px; margin-top: 18px; }
+.login-error { background: #fff0eb; border: 1px solid #edc8b9; border-radius: 8px; color: #a4482d; font-size: 12px; line-height: 1.5; margin: 0 0 18px; padding: 10px 12px; }
