@@ -72,10 +72,37 @@ npm run build
 
 ## Deployment
 
-Deploy as a normal Node-compatible Next.js application on Vercel, Cloud Run, or another serverless host. Configure these server-side environment variables in the deployment platform:
+Production deployment: https://coffee-shop-pos-orpin.vercel.app
 
+The deployed serverless app requires Google OAuth before it serves the POS or sync APIs. It currently fails closed with an OAuth configuration message until the two OAuth values below are configured.
+
+### Finish Google OAuth
+
+1. In Google Cloud Console, select or create the business Google Cloud project.
+2. Configure the OAuth consent screen as an internal/testing application and add `arief0303@gmail.com` as a test user if the app is external and still in testing.
+3. Create an OAuth 2.0 Client ID of type **Web application**.
+4. Add this exact authorised redirect URI:
+
+```text
+https://coffee-shop-pos-orpin.vercel.app/api/auth/google/callback
+```
+
+5. Add the Client ID and Client Secret to Vercel as the `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` production environment variables, then redeploy.
+
+### Required Vercel environment variables
+
+Already configured:
+
+- `AUTH_SECRET` — generated server-side
+- `ALLOWED_EMAILS=arief0303@gmail.com`
+- `NEXT_PUBLIC_APP_URL=https://coffee-shop-pos-orpin.vercel.app`
+
+Still required for functional authentication and Google Sheets sync:
+
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
 - `GOOGLE_SERVICE_ACCOUNT_EMAIL`
 - `GOOGLE_PRIVATE_KEY`
 - `GOOGLE_SHEET_ID`
 
-The current prototype has no authentication on the sync routes. Keep the deployment private or place it behind an access-control layer before exposing it to the public internet. Add Google OAuth or another server-side session boundary before production use.
+The OAuth client authenticates the cashier. The service-account credentials access the business Google Sheet. Both secret types stay in Vercel server-side environment variables and are never sent to the browser.
