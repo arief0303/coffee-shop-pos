@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 type LoginPageProps = { searchParams: Promise<{ error?: string }> };
 
 const messages: Record<string, string> = {
@@ -11,6 +9,10 @@ const messages: Record<string, string> = {
   oauth_failed: "Google sign-in could not be completed. Please try again.",
 };
 
+export function GoogleSignInLink() {
+  return <a className="google-button" href="/api/auth/google"><span>G</span> Continue with Google</a>;
+}
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { error } = await searchParams;
   return (
@@ -21,7 +23,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <h1>Coffee shop POS</h1>
         <p>Sign in with your authorised Google account to operate the counter and sync sales.</p>
         {error && <p className="login-error">{messages[error] ?? "Sign-in failed. Please try again."}</p>}
-        <Link className="google-button" href="/api/auth/google"><span>G</span> Continue with Google</Link>
+        <GoogleSignInLink />
         <small>Only approved accounts can access the POS.</small>
       </section>
     </main>
