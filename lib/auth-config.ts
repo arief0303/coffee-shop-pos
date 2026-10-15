@@ -18,3 +18,10 @@ export function isAllowedEmail(email: string, allowedEmails: string | undefined)
 export function createOAuthState(): string {
   return identifier();
 }
+
+const AUTH_OFF_VALUES = new Set(["false", "0", "off", "no"]);
+
+/** Google sign-in is on unless AUTH_REQUIRED is explicitly set to false/0/off/no. */
+export function isAuthRequired(value: string | undefined): boolean {
+  return !AUTH_OFF_VALUES.has((value ?? "").trim().toLowerCase());
+}

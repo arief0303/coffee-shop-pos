@@ -110,3 +110,29 @@ export async function appendSaleIfMissing(sale: Sale): Promise<"created" | "dupl
   });
   return "created";
 }
+
+export async function readSalesFromSheets(): Promise<Sale[]> {
+  const response = await getSheetsClient().spreadsheets.values.get({
+    spreadsheetId: sheetId(),
+    range: SALES_RANGE,
+  });
+  return (response.data.values ?? [])
+    .slice(1)
+    .filter((row) => row[0])
+    .map((row) => {
+      let items: Sale["items"] = [];
+      try {
+        const parsed: unknown = JSON.parse(row[1] ?? "[]");
+        if (Array.isArray(parsed)) items = parsed as Sale["items"];
+      } catch {
+        items = [];
+      }
+      return {
+        id: row[0],
+        items,
+        total: Number(row[2] ?? 0),
+        timestamp: Number(row[3] ?? 0),
+        paymentMethod: "cash" as const,
+      };
+    });
+}

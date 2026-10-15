@@ -106,3 +106,20 @@ Still required for functional authentication and Google Sheets sync:
 - `GOOGLE_SHEET_ID`
 
 The OAuth client authenticates the cashier. The service-account credentials access the business Google Sheet. Both secret types stay in Vercel server-side environment variables and are never sent to the browser.
+
+## Optional Google sign-in
+
+Sign-in is required by default. Set `AUTH_REQUIRED=false` to run the POS without it; `/login` then redirects to the POS and every route is open. Only do this on a network or deployment you trust.
+
+## Backups
+
+`POST /api/backup` snapshots the Google Sheet (products and sales) into one restorable JSON file plus two CSV files and uploads them to the provider named in `BACKUP_PROVIDER`. The inventory page has a **Back up** button. Backups are disabled until `BACKUP_PROVIDER` is set.
+
+| Provider | `BACKUP_PROVIDER` | Setup |
+| --- | --- | --- |
+| Vercel Blob (recommended) | `vercel-blob` | In the Vercel project: Storage → create a Blob store and connect it. This adds `BLOB_READ_WRITE_TOKEN`. Files are stored privately under `backups/`. |
+| Google Drive | `google-drive` | Reuses `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`. Enable the Drive API, add `http://localhost:53682/callback` as an authorised redirect URI, then run `node scripts/drive-refresh-token.mjs` and store the result as `GOOGLE_DRIVE_REFRESH_TOKEN`. Files go to a `Bean Counter Backups` folder in the owner's Drive (the narrow `drive.file` scope only sees files the app created). |
+
+A service account is not used for Drive because Google does not give service accounts storage quota on personal Drives.
+
+Automation: call `POST /api/backup` with `Authorization: Bearer $CRON_SECRET` from a scheduler. When `AUTH_REQUIRED=false`, the bearer secret is the only way to trigger a backup.

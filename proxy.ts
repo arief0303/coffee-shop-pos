@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
-import { SESSION_COOKIE } from "@/lib/auth-config";
+import { isAuthRequired, SESSION_COOKIE } from "@/lib/auth-config";
 
 function sessionKey(): Uint8Array | null {
   const secret = process.env.AUTH_SECRET;
@@ -20,6 +20,16 @@ async function hasValidSession(token: string | undefined): Promise<boolean> {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Optional sign-in: with AUTH_REQUIRED=false the POS is open and /login has nothing to do.
+  if (!isAuthRequired(process.env.AUTH_REQUIRED)) {
+    if (pathname === "/login") return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.next();
+  }
+
+  // The backup route authenticates itself (session or CRON_SECRET bearer) so schedulers can call it.
+  if (pathname === "/api/backup") return NextResponse.next();
+
   if (pathname === "/login" || pathname.startsWith("/api/auth/")) {
     if (pathname === "/login" && await hasValidSession(request.cookies.get(SESSION_COOKIE)?.value)) {
       return NextResponse.redirect(new URL("/", request.url));
