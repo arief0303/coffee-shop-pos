@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { isAuthRequired } from "@/lib/auth-config";
 import { selectProvider } from "@/lib/backup";
 import { hasValidBearer } from "@/lib/backup/authorize";
 import { buildBackupFiles } from "@/lib/backup/snapshot";
@@ -11,8 +10,7 @@ export const dynamic = "force-dynamic";
 
 async function isAuthorized(request: Request): Promise<boolean> {
   if (hasValidBearer(request.headers.get("authorization"), process.env.CRON_SECRET)) return true;
-  // With sign-in disabled, only the bearer secret may trigger a backup.
-  if (!isAuthRequired(process.env.AUTH_REQUIRED)) return false;
+  // Anonymous users (possible when sign-in is optional) cannot trigger backups.
   return (await getSession()) !== null;
 }
 

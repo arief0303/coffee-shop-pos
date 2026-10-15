@@ -109,7 +109,7 @@ The OAuth client authenticates the cashier. The service-account credentials acce
 
 ## Optional Google sign-in
 
-Sign-in is required by default. Set `AUTH_REQUIRED=false` to run the POS without it; `/login` then redirects to the POS and every route is open. Only do this on a network or deployment you trust.
+Sign-in is required by default. Set `AUTH_REQUIRED=false` to make it optional: the POS opens without an account, the top bar offers **Sign in**, and `/login` adds a "Continue without signing in" link. Signed-in users see their name and a **Sign out** button. Anonymous users cannot trigger backups. Only do this on a network or deployment you trust.
 
 ## Backups
 
@@ -124,4 +124,4 @@ A service account is not used for Drive because Google does not give service acc
 
 Automation: call `POST /api/backup` with `Authorization: Bearer $CRON_SECRET` from a scheduler. When `AUTH_REQUIRED=false`, the bearer secret is the only way to trigger a backup.
 
-The Sign out button is rendered at build time from `AUTH_REQUIRED`, so redeploy after changing that variable.
+Redeploy after changing `AUTH_REQUIRED`.

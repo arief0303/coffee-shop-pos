@@ -22,8 +22,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Optional sign-in: with AUTH_REQUIRED=false the POS is open and /login has nothing to do.
-  if (!isAuthRequired(process.env.AUTH_REQUIRED)) {
-    if (pathname === "/login") return NextResponse.redirect(new URL("/", request.url));
+  if (!isAuthRequired(process.env.AUTH_REQUIRED) && pathname !== "/login" && !pathname.startsWith("/api/auth/")) {
     return NextResponse.next();
   }
 

@@ -1,4 +1,4 @@
-import { SignOutButton } from "@/components/auth-context";
+import { AccountMenu } from "@/components/auth-context";
 
 type TopBarProps = {
   subtitle: string;
@@ -18,7 +18,7 @@ export function TopBar({ subtitle, online, pending, children }: TopBarProps) {
         <span className={`connection ${online ? "is-online" : "is-offline"}`}><i aria-hidden="true" />{online ? "Online" : "Offline"}</span>
         {pending > 0 && <span className="pending-chip" title="Changes saved on this device that have not reached Google Sheets yet">{pending} unsynced</span>}
         {children}
-        <SignOutButton />
+        <AccountMenu />
       </nav>
     </header>
   );
