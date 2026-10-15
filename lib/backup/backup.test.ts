@@ -45,7 +45,7 @@ describe("backup snapshot", () => {
     expect(json.products).toEqual([product]);
     expect(json.sales).toEqual([sale]);
     expect(files[1].body).toContain('"Flat ""white"""');
-    expect(files[2].body.split("\n")[0]).toBe("id,timestamp,paymentMethod,total,items");
+    expect(files[2].body.split("\n")[0]).toBe("id,timestamp,paymentMethod,paymentProvider,paymentRef,total,items");
   });
 });
 

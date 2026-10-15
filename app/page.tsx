@@ -6,14 +6,15 @@ import { TopBar } from "@/components/top-bar";
 import { categoryEmoji, matchesQuery, stockStatus } from "@/lib/catalogue";
 import { changeDue, formatRupiah, parseAmount, quickCashAmounts } from "@/lib/cash";
 import { pullProducts, pushPendingOperations, syncNow } from "@/lib/client-sync";
-import { getPendingOperations, getProducts, saveProduct, saveSale } from "@/lib/local-db";
-import type { Product, SaleItem } from "@/lib/sync-protocol";
+import { getPendingOperations, getProducts, getSetting, saveProduct, saveSale } from "@/lib/local-db";
+import { cleanReference, providersWithImages, QRIS_LABELS, QRIS_REF_HINTS, qrisImageKey } from "@/lib/qris";
+import { QRIS_PROVIDERS, type PaymentMethod, type Product, type QrisProvider, type SaleItem } from "@/lib/sync-protocol";
 import { timestamp } from "@/lib/time";
 import { useOnline } from "@/lib/use-online";
 
 type CartLine = SaleItem & { stock: number };
 type Notice = { text: string; tone?: "error" };
-type CompletedSale = { total: number; change: number; items: number };
+type CompletedSale = { total: number; change: number; items: number; via?: string };
 
 const sortByName = (items: Product[]) => [...items].sort((a, b) => a.name.localeCompare(b.name));
 
@@ -24,6 +25,10 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [tendered, setTendered] = useState("");
+  const [method, setMethod] = useState<PaymentMethod>("cash");
+  const [provider, setProvider] = useState<QrisProvider>("bri");
+  const [qrImages, setQrImages] = useState<Partial<Record<QrisProvider, string>>>({});
+  const [paymentRef, setPaymentRef] = useState("");
   const [completed, setCompleted] = useState<CompletedSale | null>(null);
   const [pending, setPending] = useState(0);
   const [busy, setBusy] = useState(true);
@@ -51,6 +56,8 @@ export default function Home() {
   const shortBy = Math.max(0, total - received);
   const change = changeDue(total, received);
   const filtering = query.trim() !== "" || category !== "all";
+  const availableProviders = providersWithImages(qrImages);
+  const qrisReady = method === "qris" && Boolean(qrImages[provider]);
 
   useEffect(() => {
     let mounted = true;
@@ -62,6 +69,13 @@ export default function Home() {
         setNotice({ text: localProducts.length ? "Ready for orders" : "Add products in Inventory to get started" });
       }
       void refreshPending();
+      const entries = await Promise.all(QRIS_PROVIDERS.map(async (item) => [item, await getSetting(qrisImageKey(item))] as const));
+      if (mounted) {
+        const images = Object.fromEntries(entries.filter(([, value]) => value)) as Partial<Record<QrisProvider, string>>;
+        setQrImages(images);
+        const first = providersWithImages(images)[0];
+        if (first) setProvider(first);
+      }
       if (navigator.onLine) {
         try {
           const freshProducts = await pullProducts();
@@ -119,16 +133,21 @@ export default function Home() {
   function clearOrder() {
     setCart([]);
     setTendered("");
+    setPaymentRef("");
   }
 
   async function checkout() {
-    if (!cart.length || shortBy > 0) return;
+    if (!cart.length || (method === "cash" && shortBy > 0) || (method === "qris" && !qrisReady)) return;
+    const paidByQris = method === "qris";
+    const ref = paidByQris ? cleanReference(paymentRef) : undefined;
     setSyncing(true);
     try {
       await saveSale({
         items: cart.map(({ productId, name, quantity, price }) => ({ productId, name, quantity, price })),
         total,
-        paymentMethod: "cash",
+        paymentMethod: method,
+        paymentProvider: paidByQris ? provider : undefined,
+        paymentRef: ref,
         timestamp: timestamp(),
       });
       const updated = await Promise.all(
@@ -138,7 +157,12 @@ export default function Home() {
         }),
       );
       setProducts(sortByName(updated));
-      setCompleted({ total, change, items: itemCount });
+      setCompleted({
+        total,
+        change: paidByQris ? 0 : change,
+        items: itemCount,
+        via: paidByQris ? `${QRIS_LABELS[provider]}${ref ? ` · ref ${ref}` : ""}` : undefined,
+      });
       clearOrder();
       setNotice({ text: online ? "Sale saved — syncing to Google Sheets" : "Sale saved offline — will sync when online" });
       await refreshPending();
@@ -259,7 +283,7 @@ export default function Home() {
             <div className="sale-complete" role="status">
               <div>
                 <b>Sale complete · {formatRupiah(completed.total)}</b>
-                <small>{completed.change > 0 ? `Give ${formatRupiah(completed.change)} change` : "No change due"}</small>
+                <small>{completed.via ? `Paid by QRIS · ${completed.via}` : completed.change > 0 ? `Give ${formatRupiah(completed.change)} change` : "No change due"}</small>
               </div>
               <button className="text-button" onClick={() => setCompleted(null)}>Dismiss</button>
             </div>
@@ -286,6 +310,12 @@ export default function Home() {
           <div className="checkout-box">
             <div className="summary-row"><span>{itemCount} {itemCount === 1 ? "item" : "items"}</span><span>{formatRupiah(total)}</span></div>
 
+            <div className="method-toggle" role="group" aria-label="Payment method">
+              <button type="button" className={method === "cash" ? "active" : ""} aria-pressed={method === "cash"} onClick={() => setMethod("cash")}>Cash</button>
+              <button type="button" className={method === "qris" ? "active" : ""} aria-pressed={method === "qris"} onClick={() => setMethod("qris")}>QRIS</button>
+            </div>
+
+            {method === "cash" ? (
             <div className="cash-entry">
               <label htmlFor="cash-received">Cash received</label>
               <input
@@ -310,9 +340,36 @@ export default function Home() {
                 </p>
               )}
             </div>
+            ) : (
+              <div className="qris-entry">
+                {availableProviders.length === 0 ? (
+                  <p className="change-line is-short">No QRIS QR yet. <Link href="/inventory">Upload one in Inventory</Link>.</p>
+                ) : (
+                  <>
+                    {availableProviders.length > 1 && (
+                      <div className="quick-cash" role="group" aria-label="Receiving account">
+                        {availableProviders.map((item) => (
+                          <button key={item} type="button" className={provider === item ? "active" : ""} aria-pressed={provider === item} onClick={() => setProvider(item)}>{QRIS_LABELS[item]}</button>
+                        ))}
+                      </div>
+                    )}
+                    {qrImages[provider] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={qrImages[provider]} alt={`${QRIS_LABELS[provider]} QR code to scan`} className="qris-checkout" />
+                    ) : (
+                      <p className="change-line is-short">Pick an account with a QR.</p>
+                    )}
+                    <p className="qris-amount">Customer pays <b>{formatRupiah(total)}</b></p>
+                    <label htmlFor="payment-ref">{QRIS_REF_HINTS[provider]}</label>
+                    <input id="payment-ref" autoComplete="off" maxLength={64} value={paymentRef} onChange={(event) => setPaymentRef(event.target.value)} placeholder="Optional" disabled={!cart.length} />
+                    <small className="offline-hint">Confirm the app shows {formatRupiah(total)} received before completing.</small>
+                  </>
+                )}
+              </div>
+            )}
 
-            <button className="checkout-button" onClick={() => void checkout()} disabled={!cart.length || syncing || shortBy > 0}>
-              {syncing ? "Saving..." : "Complete cash sale"} <span aria-hidden="true">→</span>
+            <button className="checkout-button" onClick={() => void checkout()} disabled={!cart.length || syncing || (method === "cash" && shortBy > 0) || (method === "qris" && !qrisReady)}>
+              {syncing ? "Saving..." : method === "qris" ? "Payment received" : "Complete cash sale"} <span aria-hidden="true">→</span>
             </button>
             <small className="offline-hint">{online ? "Sale is saved here first, then written to Google Sheets" : "Offline — the sale will sync automatically later"}</small>
           </div>

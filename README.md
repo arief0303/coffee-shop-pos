@@ -125,3 +125,13 @@ A service account is not used for Drive because Google does not give service acc
 Automation: call `POST /api/backup` with `Authorization: Bearer $CRON_SECRET` from a scheduler. When `AUTH_REQUIRED=false`, the bearer secret is the only way to trigger a backup.
 
 Redeploy after changing `AUTH_REQUIRED`.
+
+## QRIS payments
+
+At checkout the cashier chooses **Cash** or **QRIS**. QRIS works with any merchant account because QRIS is interoperable; the POS shows the QR you uploaded for that account and records which account received the money.
+
+1. **Inventory → QRIS payment QR**: upload a screenshot of the QR from each app you accept (BRImerchant, GoPay Merchant, BCA, or other). Images are stored on that device only and work offline. Repeat on each tablet or phone.
+2. **POS → QRIS**: pick the receiving account (shown only when more than one QR is uploaded), let the customer scan, check the merchant app shows the amount received, optionally type the app's reference, then tap **Payment received**.
+3. **Google Sheets**: `Sales` gains two columns, `G = paymentProvider` (`bri`, `gopay`, `bca`, `other`) and `H = paymentRef`. Add those two headers to row 1; existing rows need no change. Cash sales leave both blank. Backup CSVs include the same columns.
+
+The POS does not verify the payment with the bank; the cashier confirms it in the merchant app. Automatic confirmation needs a payment-provider API (for example BRIAPI SNAP QRIS MPM Dynamic), which requires an agreement with the provider; see `.hermes/plans/`.

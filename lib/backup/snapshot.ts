@@ -44,8 +44,8 @@ export function buildBackupFiles(products: Product[], sales: Sale[], now: Date =
       name: `bean-counter-sales-${stamp}.csv`,
       contentType: "text/csv",
       body: csv(
-        ["id", "timestamp", "paymentMethod", "total", "items"],
-        sales.map((s) => [s.id, new Date(s.timestamp).toISOString(), s.paymentMethod, s.total, JSON.stringify(s.items)]),
+        ["id", "timestamp", "paymentMethod", "paymentProvider", "paymentRef", "total", "items"],
+        sales.map((s) => [s.id, new Date(s.timestamp).toISOString(), s.paymentMethod, s.paymentProvider ?? "", s.paymentRef ?? "", s.total, JSON.stringify(s.items)]),
       ),
     },
   ];

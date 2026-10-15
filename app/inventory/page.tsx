@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { QrisSettings } from "@/components/qris-settings";
 import { TopBar } from "@/components/top-bar";
 import { categoryEmoji, matchesQuery, stockStatus } from "@/lib/catalogue";
 import { formatRupiah } from "@/lib/cash";
@@ -170,6 +171,7 @@ export default function InventoryPage() {
         </div>
 
         <div className="inventory-layout">
+          <div className="inventory-side">
           <form className="inventory-form" onSubmit={submit} noValidate>
             <h2>{editingId ? "Edit menu item" : "Add menu item"}</h2>
 
@@ -206,6 +208,8 @@ export default function InventoryPage() {
             </div>
             <p className="form-note">Changes are saved on this device first and sent to Google Sheets when online.</p>
           </form>
+          <QrisSettings onMessage={(text, error) => setNotice({ text, tone: error ? "error" : undefined })} />
+          </div>
 
           <div className="inventory-list">
             <div className="list-heading">

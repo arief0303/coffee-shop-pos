@@ -24,6 +24,10 @@ interface PosDatabase extends DBSchema {
     value: QueueRecord;
     indexes: { byCreatedAt: number };
   };
+  settings: {
+    key: string;
+    value: { key: string; value: string };
+  };
 }
 
 let databasePromise: Promise<IDBPDatabase<PosDatabase>> | undefined;
@@ -34,21 +38,38 @@ function createId(): string {
 
 export function getDatabase(): Promise<IDBPDatabase<PosDatabase>> {
   if (!databasePromise) {
-    databasePromise = openDB<PosDatabase>("pos-system", 1, {
-      upgrade(database) {
-        const products = database.createObjectStore("products", { keyPath: "id" });
-        products.createIndex("byUpdatedAt", "updatedAt");
-        products.createIndex("bySku", "sku", { unique: true });
-
-        const sales = database.createObjectStore("sales", { keyPath: "id" });
-        sales.createIndex("byTimestamp", "timestamp");
-
-        const syncQueue = database.createObjectStore("syncQueue", { keyPath: "id" });
-        syncQueue.createIndex("byCreatedAt", "createdAt");
+    databasePromise = openDB<PosDatabase>("pos-system", 2, {
+      upgrade(database, oldVersion) {
+        if (oldVersion < 1) createInitialStores(database);
+        if (oldVersion < 2) database.createObjectStore("settings", { keyPath: "key" });
       },
     });
   }
   return databasePromise;
+}
+
+function createInitialStores(database: IDBPDatabase<PosDatabase>): void {
+  const products = database.createObjectStore("products", { keyPath: "id" });
+  products.createIndex("byUpdatedAt", "updatedAt");
+  products.createIndex("bySku", "sku", { unique: true });
+
+  const sales = database.createObjectStore("sales", { keyPath: "id" });
+  sales.createIndex("byTimestamp", "timestamp");
+
+  const syncQueue = database.createObjectStore("syncQueue", { keyPath: "id" });
+  syncQueue.createIndex("byCreatedAt", "createdAt");
+}
+
+export async function getSetting(key: string): Promise<string | undefined> {
+  return (await (await getDatabase()).get("settings", key))?.value;
+}
+
+export async function setSetting(key: string, value: string): Promise<void> {
+  await (await getDatabase()).put("settings", { key, value });
+}
+
+export async function deleteSetting(key: string): Promise<void> {
+  await (await getDatabase()).delete("settings", key);
 }
 
 export async function getProducts(): Promise<Product[]> {

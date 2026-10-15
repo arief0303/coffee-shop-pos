@@ -1,8 +1,8 @@
 import { google, sheets_v4 } from "googleapis";
-import type { Product, Sale } from "@/lib/sync-protocol";
+import { QRIS_PROVIDERS, type Product, type Sale } from "@/lib/sync-protocol";
 
 const PRODUCTS_RANGE = "Products!A:G";
-const SALES_RANGE = "Sales!A:F";
+const SALES_RANGE = "Sales!A:H";
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
@@ -105,6 +105,8 @@ export async function appendSaleIfMissing(sale: Sale): Promise<"created" | "dupl
         String(sale.timestamp),
         sale.paymentMethod,
         sale.id,
+        sale.paymentProvider ?? "",
+        sale.paymentRef ?? "",
       ]],
     },
   });
@@ -132,7 +134,9 @@ export async function readSalesFromSheets(): Promise<Sale[]> {
         items,
         total: Number(row[2] ?? 0),
         timestamp: Number(row[3] ?? 0),
-        paymentMethod: "cash" as const,
+        paymentMethod: (row[4] === "qris" ? "qris" : "cash") as Sale["paymentMethod"],
+        paymentProvider: QRIS_PROVIDERS.find((value) => value === row[6]),
+        paymentRef: row[7] || undefined,
       };
     });
 }

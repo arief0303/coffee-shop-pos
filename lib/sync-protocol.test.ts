@@ -90,3 +90,30 @@ describe("sync protocol", () => {
     ).toBe(37000);
   });
 });
+
+describe("QRIS payments", () => {
+  const items = [{ productId: "p1", name: "Flat white", quantity: 1, price: 28000 }];
+  const sale = (extra: Record<string, unknown>) => ({
+    operations: [{ id: "op1", type: "sale.create", payload: { sale: { id: "s1", items, total: 28000, timestamp: 1_700_000_000_000, ...extra } } }],
+  });
+
+  it("accepts a QRIS sale for each supported account", () => {
+    for (const paymentProvider of ["bri", "gopay", "bca", "other"]) {
+      expect(validateSyncBatch(sale({ paymentMethod: "qris", paymentProvider })).operations).toHaveLength(1);
+    }
+  });
+
+  it("accepts an optional reference", () => {
+    expect(validateSyncBatch(sale({ paymentMethod: "qris", paymentProvider: "bri", paymentRef: "033265" })).operations).toHaveLength(1);
+  });
+
+  it("requires a known provider for QRIS", () => {
+    expect(() => validateSyncBatch(sale({ paymentMethod: "qris" }))).toThrow("QRIS sales need a supported account");
+    expect(() => validateSyncBatch(sale({ paymentMethod: "qris", paymentProvider: "ovo" }))).toThrow("QRIS sales need a supported account");
+  });
+
+  it("rejects unknown payment methods and oversized references", () => {
+    expect(() => validateSyncBatch(sale({ paymentMethod: "card" }))).toThrow("Unsupported payment method");
+    expect(() => validateSyncBatch(sale({ paymentMethod: "qris", paymentProvider: "bri", paymentRef: "x".repeat(65) }))).toThrow("Payment reference is invalid");
+  });
+});

@@ -8,6 +8,12 @@ export type Product = {
   updatedAt: number;
 };
 
+export const PAYMENT_METHODS = ["cash", "qris"] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+export const QRIS_PROVIDERS = ["bri", "gopay", "bca", "other"] as const;
+export type QrisProvider = (typeof QRIS_PROVIDERS)[number];
+
 export type SaleItem = {
   productId: string;
   name: string;
@@ -19,7 +25,11 @@ export type Sale = {
   id: string;
   items: SaleItem[];
   total: number;
-  paymentMethod: "cash";
+  paymentMethod: PaymentMethod;
+  /** Which QRIS merchant account received the money (QRIS sales only). */
+  paymentProvider?: QrisProvider;
+  /** Optional reference from the merchant app notification, e.g. BRI "No. Ref". */
+  paymentRef?: string;
   timestamp: number;
 };
 
@@ -47,7 +57,15 @@ function assertSale(value: unknown): asserts value is Sale {
   if (!Array.isArray(sale.items) || sale.items.length === 0) {
     throw new Error("Sale must contain at least one item");
   }
-  if (sale.paymentMethod !== "cash") throw new Error("Only cash payments are supported");
+  if (!PAYMENT_METHODS.includes(sale.paymentMethod as PaymentMethod)) {
+    throw new Error("Unsupported payment method");
+  }
+  if (sale.paymentMethod === "qris" && !QRIS_PROVIDERS.includes(sale.paymentProvider as QrisProvider)) {
+    throw new Error("QRIS sales need a supported account");
+  }
+  if (sale.paymentRef !== undefined && (typeof sale.paymentRef !== "string" || sale.paymentRef.length > 64)) {
+    throw new Error("Payment reference is invalid");
+  }
   if (typeof sale.timestamp !== "number" || !Number.isInteger(sale.timestamp) || sale.timestamp <= 0) {
     throw new Error("Sale timestamp is invalid");
   }
