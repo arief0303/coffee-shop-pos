@@ -5,7 +5,7 @@ const messages: Record<string, string> = {
   oauth_state_invalid: "Your sign-in request expired. Please try again.",
   token_exchange_failed: "Google could not complete the sign-in request.",
   userinfo_failed: "Google account details could not be verified.",
-  account_not_allowed: "This Google account is not allowed to access the POS.",
+  account_not_allowed: "This Google account is not on the approved list. Ask the owner to add your email.",
   oauth_failed: "Google sign-in could not be completed. Please try again.",
 };
 

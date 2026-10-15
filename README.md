@@ -123,3 +123,5 @@ Sign-in is required by default. Set `AUTH_REQUIRED=false` to run the POS without
 A service account is not used for Drive because Google does not give service accounts storage quota on personal Drives.
 
 Automation: call `POST /api/backup` with `Authorization: Bearer $CRON_SECRET` from a scheduler. When `AUTH_REQUIRED=false`, the bearer secret is the only way to trigger a backup.
+
+The Sign out button is rendered at build time from `AUTH_REQUIRED`, so redeploy after changing that variable.
