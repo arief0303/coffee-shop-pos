@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Keypad } from "@/components/keypad";
 import { TopBar } from "@/components/top-bar";
 import { categoryEmoji, matchesQuery, stockStatus } from "@/lib/catalogue";
 import { changeDue, formatRupiah, parseAmount, quickCashAmounts } from "@/lib/cash";
@@ -29,6 +30,8 @@ export default function Home() {
   const [provider, setProvider] = useState<QrisProvider>("bri");
   const [qrImages, setQrImages] = useState<Partial<Record<QrisProvider, string>>>({});
   const [paymentRef, setPaymentRef] = useState("");
+  const [confirmClear, setConfirmClear] = useState(false);
+  const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [completed, setCompleted] = useState<CompletedSale | null>(null);
   const [pending, setPending] = useState(0);
   const [busy, setBusy] = useState(true);
@@ -38,6 +41,32 @@ export default function Home() {
   const refreshPending = useCallback(async () => {
     setPending((await getPendingOperations()).length);
   }, []);
+
+  // Keep the screen on while the POS is open (tablets at the counter).
+  useEffect(() => {
+    let lock: { release: () => Promise<void> } | null = null;
+    const request = async () => {
+      try {
+        lock = (await (navigator as Navigator & { wakeLock?: { request: (type: "screen") => Promise<{ release: () => Promise<void> }> } }).wakeLock?.request("screen")) ?? null;
+      } catch {
+        lock = null;
+      }
+    };
+    const onVisible = () => { if (document.visibilityState === "visible") void request(); };
+    void request();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      void lock?.release();
+    };
+  }, []);
+
+  // The receipt banner clears itself so the next order starts clean.
+  useEffect(() => {
+    if (!completed) return;
+    const timer = setTimeout(() => setCompleted(null), 6000);
+    return () => clearTimeout(timer);
+  }, [completed]);
 
   const categories = useMemo(
     () => ["all", ...new Set(products.map((product) => product.category).filter(Boolean))],
@@ -134,6 +163,14 @@ export default function Home() {
     setCart([]);
     setTendered("");
     setPaymentRef("");
+    setConfirmClear(false);
+    if (clearTimer.current) clearTimeout(clearTimer.current);
+  }
+
+  function requestClear() {
+    if (confirmClear) return clearOrder();
+    setConfirmClear(true);
+    clearTimer.current = setTimeout(() => setConfirmClear(false), 3000);
   }
 
   async function checkout() {
@@ -197,7 +234,7 @@ export default function Home() {
   if (busy) return <main className="page-center" role="status">Loading POS...</main>;
 
   return (
-    <main className="app-shell">
+    <main className="app-shell pos">
       <TopBar subtitle="Coffee shop POS" online={online} pending={pending}>
         <button className="secondary-button" onClick={() => void sync()} disabled={!online || syncing}>{syncing ? "Syncing..." : "Sync"}</button>
         <Link className="secondary-button" href="/inventory">Inventory</Link>
@@ -206,7 +243,7 @@ export default function Home() {
       <div className="workspace">
         <section className="catalogue-panel" aria-label="Menu">
           <div className="page-heading">
-            <div><p className="eyebrow">Today&apos;s counter</p><h1>Take an order</h1></div>
+            <div><p className="eyebrow">Today&apos;s counter</p><h1 className="compact">Take an order</h1></div>
             <span className={`sync-note ${notice.tone === "error" ? "is-error" : ""}`} role="status" aria-live="polite">{notice.text}</span>
           </div>
 
@@ -276,7 +313,7 @@ export default function Home() {
         <aside className="cart-panel" id="order" aria-label="Current order">
           <div className="cart-heading">
             <div><p className="eyebrow">New ticket</p><h2>Current order</h2></div>
-            <button className="text-button" onClick={clearOrder} disabled={!cart.length}>Clear</button>
+            <button className={`text-button ${confirmClear ? "is-confirm" : ""}`} onClick={requestClear} disabled={!cart.length}>{confirmClear ? "Tap again to clear" : "Clear"}</button>
           </div>
 
           {completed && (
@@ -317,26 +354,22 @@ export default function Home() {
 
             {method === "cash" ? (
             <div className="cash-entry">
-              <label htmlFor="cash-received">Cash received</label>
-              <input
-                id="cash-received"
-                inputMode="numeric"
-                autoComplete="off"
-                placeholder={total ? formatRupiah(total) : "Rp 0"}
-                value={tenderedAmount === null ? "" : tenderedAmount.toLocaleString("id-ID")}
-                onChange={(event) => setTendered(event.target.value)}
-                disabled={!cart.length}
-              />
+              <div className="cash-display" aria-live="polite">
+                <span>Cash received</span>
+                <b>{tenderedAmount === null ? (cart.length ? "Exact" : "Rp 0") : formatRupiah(tenderedAmount)}</b>
+                {tendered && <button type="button" className="text-button" onClick={() => setTendered("")}>Clear</button>}
+              </div>
               {cart.length > 0 && (
                 <div className="quick-cash" role="group" aria-label="Quick cash amounts">
                   {quickCashAmounts(total).map((amount) => (
-                    <button key={amount} type="button" onClick={() => setTendered(String(amount))}>{amount === total ? "Exact" : formatRupiah(amount)}</button>
+                    <button key={amount} type="button" className={received === amount && (tenderedAmount !== null || amount === total) ? "active" : ""} onClick={() => setTendered(amount === total ? "" : String(amount))}>{amount === total ? "Exact" : formatRupiah(amount)}</button>
                   ))}
                 </div>
               )}
+              <Keypad value={tendered} onChange={setTendered} disabled={!cart.length} />
               {cart.length > 0 && (
                 <p className={`change-line ${shortBy > 0 ? "is-short" : ""}`} aria-live="polite">
-                  {shortBy > 0 ? `Short by ${formatRupiah(shortBy)}` : `Change due ${formatRupiah(change)}`}
+                  {shortBy > 0 ? `Short by ${formatRupiah(shortBy)}` : `Change ${formatRupiah(change)}`}
                 </p>
               )}
             </div>
@@ -369,9 +402,10 @@ export default function Home() {
             )}
 
             <button className="checkout-button" onClick={() => void checkout()} disabled={!cart.length || syncing || (method === "cash" && shortBy > 0) || (method === "qris" && !qrisReady)}>
-              {syncing ? "Saving..." : method === "qris" ? "Payment received" : "Complete cash sale"} <span aria-hidden="true">→</span>
+              <span>{syncing ? "Saving..." : method === "qris" ? "Payment received" : shortBy > 0 ? "Not enough cash" : "Charge cash"}</span>
+              <b>{formatRupiah(total)}</b>
             </button>
-            <small className="offline-hint">{online ? "Sale is saved here first, then written to Google Sheets" : "Offline — the sale will sync automatically later"}</small>
+            {!online && <small className="offline-hint">Offline — sales sync automatically later</small>}
           </div>
         </aside>
       </div>

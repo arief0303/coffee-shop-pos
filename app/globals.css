@@ -190,3 +190,104 @@ html { scroll-behavior: smooth; }
 .qris-upload span { color: var(--terracotta); display: block; font-size: 13px; margin-bottom: 4px; }
 .qris-upload input { font-size: 12px; }
 .inventory-side { min-width: 0; }
+
+/* ---- Touch-first POS ---- */
+button, a, .product-card, .category-tabs { touch-action: manipulation; }
+.app-shell button, .product-card, .cart-line, .keypad { user-select: none; -webkit-user-select: none; }
+h1.compact { font-size: clamp(24px, 3vw, 32px); }
+.workspace { padding-top: clamp(16px, 2.5vw, 32px); gap: clamp(16px, 2.5vw, 36px); }
+.page-heading { margin-bottom: 18px; }
+.catalogue-tools { margin-bottom: 16px; }
+.category-tabs { gap: 6px; }
+.category-tabs button { border: 1px solid transparent; border-radius: 99px; font-size: 15px; min-height: 48px; padding: 0 18px; }
+.category-tabs button.active { border-color: #d6bfa8; }
+.product-grid { gap: 10px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.product-card { min-height: 128px; padding: 12px; transition: none; }
+.product-card:hover { transform: none; }
+.product-card:active { background: #f3e9dc; border-color: #c89b79; }
+.product-emoji { height: 40px; margin-bottom: 8px; width: 40px; font-size: 22px; }
+.product-card-copy { margin-bottom: 8px; }
+.product-card-copy b { font-size: 16px; line-height: 1.2; }
+.product-card-copy small { display: none; }
+.product-card > strong { font-size: 17px; }
+.cart-badge { font-size: 14px; min-width: 28px; padding: 4px 8px; }
+.cart-heading { padding: 16px 18px; }
+.cart-line { padding: 12px 0; }
+.cart-line > div:first-child b { font-size: 15px; }
+.quantity-control { gap: 10px; }
+.quantity-control button { font-size: 22px; height: 44px; width: 44px; border-radius: 10px; }
+.quantity-control span { font-size: 16px; min-width: 24px; }
+.text-button.is-confirm { background: #fff0eb; color: #a4482d; padding: 5px 10px; }
+.checkout-box { padding: 14px 18px; }
+.summary-row span:last-child { font-size: 22px; }
+.method-toggle { margin-top: 12px; }
+.method-toggle button { min-height: 48px; font-size: 15px; }
+.cash-entry { margin-top: 12px; padding-top: 12px; }
+.cash-display { align-items: center; display: flex; gap: 10px; margin-bottom: 8px; }
+.cash-display b { flex: 1; text-align: right; }
+.cash-display .text-button { min-height: 32px; padding: 0 6px; font-size: 13px; }
+.cash-display span { color: var(--muted); font-size: 12px; }
+.cash-display b { font-size: 22px; }
+.quick-cash { margin: 0 0 8px; }
+.quick-cash button { flex: 1 1 0; font-size: 14px; min-height: 44px; padding: 0 8px; }
+.keypad { display: grid; gap: 6px; grid-template-columns: repeat(3, 1fr); }
+.keypad button { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); font-size: 20px; font-weight: 700; min-height: 52px; }
+.keypad button:active { background: #eadfd2; }
+.keypad .keypad-action { background: #f4ede4; color: var(--terracotta); }
+.change-line { margin-top: 10px; font-size: 16px; }
+.checkout-button { font-size: 17px; min-height: 64px; margin-top: 12px; border-radius: 12px; }
+.checkout-button b { font-size: 20px; }
+.checkout-button:active { background: #a8532f; }
+.sale-complete { padding: 12px 18px; }
+@media (hover: none) { .product-card:hover { border-color: var(--line); box-shadow: none; } .secondary-button:hover { border-color: var(--line); } }
+@media (min-width: 861px) and (max-height: 820px) { .keypad button { min-height: 44px; font-size: 18px; } .checkout-button { min-height: 56px; } .cart-lines { max-height: 22vh; } }
+
+/* Fixed-height app layout on tablets/desktops: the menu scrolls, the Charge button never leaves the screen. */
+@media (min-width: 861px) {
+  .app-shell.pos { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
+  .app-shell.pos .topbar { flex: 0 0 auto; padding-bottom: 14px; padding-top: 14px; }
+  .app-shell.pos .workspace { flex: 1; min-height: 0; padding-bottom: 16px; width: 100%; }
+  .app-shell.pos .catalogue-panel { min-height: 0; overflow-y: auto; padding-right: 4px; }
+  .app-shell.pos .cart-panel { min-height: 0; overflow: hidden; }
+  .app-shell.pos .cart-lines { flex: 1; min-height: 60px; overflow-y: auto; }
+  .app-shell.pos .cart-empty { padding: 24px 0; }
+  .app-shell.pos .checkout-box { flex: 0 0 auto; }
+}
+
+.menu-import { margin-top: 20px; }
+.menu-import-row { align-items: center; border-top: 1px solid var(--line); color: var(--ink); display: flex; font-size: 14px; gap: 12px; justify-content: space-between; padding: 10px 0; }
+.menu-import-row span b, .menu-import-row span small { display: block; }
+.menu-import-row span small { color: var(--muted); font-size: 11px; }
+.menu-import-row input { flex: 0 0 110px; font-size: 16px; margin: 0; min-height: 44px; text-align: right; }
+@media (min-width: 861px) {
+  .app-shell.pos .cart-panel { overflow-y: auto; }
+  .app-shell.pos .cart-heading { padding: 10px 18px; }
+  .app-shell.pos .cart-heading .eyebrow { display: none; }
+  .app-shell.pos .cart-heading h2 { font-size: 19px; }
+  .app-shell.pos .checkout-box { padding: 10px 18px 12px; }
+  .app-shell.pos .summary-row span:last-child { font-size: 20px; }
+  .app-shell.pos .method-toggle { margin-top: 8px; }
+  .app-shell.pos .method-toggle button { min-height: 42px; }
+  .app-shell.pos .cash-entry { margin-top: 8px; padding-top: 8px; }
+  .app-shell.pos .quick-cash button { min-height: 40px; }
+  .app-shell.pos .keypad button { min-height: 46px; }
+  .app-shell.pos .change-line { margin-top: 6px; }
+  .app-shell.pos .checkout-button { margin-top: 8px; min-height: 56px; }
+}
+@media (min-width: 861px) {
+  /* Compact one-row cart lines: name · − qty + · line total */
+  .app-shell.pos .cart-lines { min-height: 118px; padding: 0 18px; }
+  .app-shell.pos .cart-line { grid-template-columns: minmax(0, 1fr) auto 90px; padding: 8px 0; }
+  .app-shell.pos .cart-line > div:first-child small { display: none; }
+  .app-shell.pos .cart-line > div:first-child b { font-size: 14px; }
+  .app-shell.pos .quantity-control { grid-column: 2; grid-row: 1; gap: 6px; }
+  .app-shell.pos .quantity-control button { height: 40px; width: 40px; }
+  .app-shell.pos .cart-line > strong { grid-column: 3; grid-row: 1; text-align: right; }
+}
+@media (min-width: 861px) and (max-height: 800px) {
+  .app-shell.pos .cart-lines { min-height: 58px; }
+  .app-shell.pos .keypad { gap: 5px; }
+  .app-shell.pos .keypad button { min-height: 40px; font-size: 18px; }
+  .app-shell.pos .quick-cash button { min-height: 38px; }
+  .app-shell.pos .checkout-button { min-height: 52px; }
+}

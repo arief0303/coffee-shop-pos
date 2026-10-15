@@ -12,7 +12,7 @@ export function TopBar({ subtitle, online, pending, children }: TopBarProps) {
     <header className="topbar">
       <div className="brand-lockup">
         <span className="brand-mark" aria-hidden="true">☕</span>
-        <div><strong>Bean Counter</strong><span>{subtitle}</span></div>
+        <div><strong>Prep.</strong><span>{subtitle}</span></div>
       </div>
       <nav className="topbar-actions" aria-label="Main">
         <span className={`connection ${online ? "is-online" : "is-offline"}`}><i aria-hidden="true" />{online ? "Online" : "Offline"}</span>

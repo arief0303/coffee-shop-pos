@@ -135,3 +135,9 @@ At checkout the cashier chooses **Cash** or **QRIS**. QRIS works with any mercha
 3. **Google Sheets**: `Sales` gains two columns, `G = paymentProvider` (`bri`, `gopay`, `bca`, `other`) and `H = paymentRef`. Add those two headers to row 1; existing rows need no change. Cash sales leave both blank. Backup CSVs include the same columns.
 
 The POS does not verify the payment with the bank; the cashier confirms it in the merchant app. Automatic confirmation needs a payment-provider API (for example BRIAPI SNAP QRIS MPM Dynamic), which requires an agreement with the provider; see `.hermes/plans/`.
+
+## Touch-first counter
+
+The POS is laid out for a tablet in landscape: the menu grid scrolls, the order panel with the keypad and **Charge** button never leaves the screen, every control is at least 40–48 px tall, and the screen stays awake while the POS is open. Fastest sale: tap the drink, tap **Charge cash** (exact amount). For change, tap a quick amount or type on the keypad. **Clear** needs two taps. Install it as a home-screen app (Add to Home Screen) for full-screen use.
+
+**Prep. menu:** Inventory → *Prep. menu* lists the wall menu with a price box per drink; fill the prices once per device and tap *Add*. Items already in the catalogue (by SKU) are skipped.

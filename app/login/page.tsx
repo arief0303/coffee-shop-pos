@@ -23,7 +23,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <main className="login-page">
       <section className="login-card">
         <span className="brand-mark">☕</span>
-        <p className="eyebrow">Bean Counter</p>
+        <p className="eyebrow">Prep.</p>
         <h1>Coffee shop POS</h1>
         <p>{optional ? "Sign in with Google to show who is on the counter, or continue without an account." : "Sign in with your authorised Google account to operate the counter and sync sales."}</p>
         {error && <p className="login-error">{messages[error] ?? "Sign-in failed. Please try again."}</p>}

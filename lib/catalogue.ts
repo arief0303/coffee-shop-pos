@@ -9,8 +9,9 @@ export function stockStatus(stock: number): StockStatus {
 
 export function categoryEmoji(category: string): string {
   const value = category.toLowerCase();
+  if (value.includes("non coffee") || value.includes("tea")) return "🍵";
   if (value.includes("coffee")) return "☕";
-  if (value.includes("tea")) return "🍵";
+  if (value.includes("extra")) return "🥛";
   return "🥐";
 }
 

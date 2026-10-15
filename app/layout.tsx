@@ -5,7 +5,7 @@ import { isAuthRequired } from "@/lib/auth-config";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
-  title: "Bean Counter POS",
+  title: "Prep. POS",
   description: "Offline-first coffee shop point of sale",
   manifest: "/manifest.webmanifest",
 };
@@ -13,6 +13,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#f8f4ed",
   viewportFit: "cover",
+  // Counter tablets: stop accidental pinch/double-tap zoom while tapping fast.
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export const dynamic = "force-dynamic";

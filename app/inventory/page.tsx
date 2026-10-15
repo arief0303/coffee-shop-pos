@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MenuImport } from "@/components/menu-import";
 import { QrisSettings } from "@/components/qris-settings";
 import { TopBar } from "@/components/top-bar";
 import { categoryEmoji, matchesQuery, stockStatus } from "@/lib/catalogue";
@@ -9,6 +10,7 @@ import { formatRupiah } from "@/lib/cash";
 import { pullProducts, pushPendingOperations } from "@/lib/client-sync";
 import { getPendingOperations, getProducts, saveProduct } from "@/lib/local-db";
 import type { Product } from "@/lib/sync-protocol";
+import { MADE_TO_ORDER_STOCK } from "@/lib/menu-prep";
 import { identifier, timestamp } from "@/lib/time";
 import { useOnline } from "@/lib/use-online";
 
@@ -92,6 +94,20 @@ export default function InventoryPage() {
       setNotice({ text: "Backup failed. Check your connection.", tone: "error" });
     } finally {
       setBackingUp(false);
+    }
+  }
+
+  async function importMenu(items: Array<{ name: string; sku: string; category: string; price: number }>) {
+    const added: Product[] = [];
+    for (const item of items) {
+      added.push(await saveProduct({ id: identifier(), name: item.name, sku: item.sku, price: item.price, stock: MADE_TO_ORDER_STOCK, category: item.category, updatedAt: timestamp() }));
+    }
+    setProducts((current) => sortByName([...current, ...added]));
+    setNotice({ text: `Added ${added.length} menu item${added.length === 1 ? "" : "s"} on this device` });
+    await refreshPending();
+    if (navigator.onLine) {
+      try { await pushPendingOperations(); setNotice({ text: `Added ${added.length} items and saved to Google Sheets` }); } catch { /* queued; sync will retry */ }
+      await refreshPending();
     }
   }
 
@@ -198,7 +214,7 @@ export default function InventoryPage() {
 
             <label>Category
               <select value={form.category} onChange={(event) => field("category", event.target.value)}>
-                <option>Coffee</option><option>Tea</option><option>Food</option><option>Other</option>
+                <option>Coffee</option><option>Non Coffee</option><option>Food</option><option>Extras</option><option>Other</option>
               </select>
             </label>
 
@@ -208,6 +224,7 @@ export default function InventoryPage() {
             </div>
             <p className="form-note">Changes are saved on this device first and sent to Google Sheets when online.</p>
           </form>
+          <MenuImport products={products} onImport={importMenu} />
           <QrisSettings onMessage={(text, error) => setNotice({ text, tone: error ? "error" : undefined })} />
           </div>
 
